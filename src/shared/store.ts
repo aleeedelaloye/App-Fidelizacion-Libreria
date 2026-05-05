@@ -428,7 +428,21 @@ export function loadData() {
     return data
   }
 
-  const data = JSON.parse(saved) as LoyaltyData
+  let data: LoyaltyData
+  try {
+    data = JSON.parse(saved) as LoyaltyData
+  } catch {
+    const demoData = createDemoData()
+    saveData(demoData)
+    return demoData
+  }
+
+  if (!data.clients?.length || !data.users?.length) {
+    const demoData = createDemoData()
+    saveData(demoData)
+    return demoData
+  }
+
   const migratedData: LoyaltyData = {
     ...data,
     rewards: (data.rewards || rewards).map((reward) => ({
@@ -464,6 +478,10 @@ export function saveData(data: LoyaltyData) {
 }
 
 export async function fetchServerData() {
+  if (window.location.hostname.endsWith('github.io')) {
+    return null
+  }
+
   const response = await fetch(`${apiBaseUrl}/api/data`)
   if (!response.ok) {
     throw new Error('No se pudo leer la base compartida.')
@@ -473,6 +491,10 @@ export async function fetchServerData() {
 }
 
 export async function saveServerData(data: LoyaltyData) {
+  if (window.location.hostname.endsWith('github.io')) {
+    return
+  }
+
   try {
     await fetch(`${apiBaseUrl}/api/data`, {
       method: 'PUT',

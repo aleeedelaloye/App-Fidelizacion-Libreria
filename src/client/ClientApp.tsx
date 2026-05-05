@@ -31,7 +31,11 @@ function ClientApp() {
     password: '',
   })
   const [error, setError] = useState('')
-  const [syncStatus, setSyncStatus] = useState('Base local')
+  const [syncStatus, setSyncStatus] = useState(
+    window.location.hostname.endsWith('github.io')
+      ? 'Modo web demo'
+      : 'Base local',
+  )
 
   const client = data.clients.find((item) => item.id === session?.clientId)
   const purchases = data.purchases.filter((item) => item.clientId === client?.id)
@@ -61,6 +65,11 @@ function ClientApp() {
   }
 
   async function refreshSharedData() {
+    if (window.location.hostname.endsWith('github.io')) {
+      setSyncStatus('Modo web demo')
+      return
+    }
+
     try {
       setSyncStatus('Sincronizando...')
       const sharedData = await syncFromServer()
