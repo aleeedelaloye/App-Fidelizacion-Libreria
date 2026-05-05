@@ -23,6 +23,75 @@
   max-width: 1440px;
 }
 
+.auth-layout {
+  align-items: center;
+  display: grid;
+  justify-items: center;
+}
+
+.auth-card,
+.launcher {
+  display: grid;
+  gap: 14px;
+  max-width: 560px;
+  width: min(100%, 560px);
+}
+
+.launcher {
+  text-align: center;
+}
+
+.launcher-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 10px;
+}
+
+.launcher-card {
+  color: inherit;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.launcher-card span {
+  color: #7a4f24;
+  font-weight: 900;
+}
+
+.launcher-card strong {
+  color: #1c3d3a;
+  font-size: 1.3rem;
+}
+
+.muted {
+  color: #5d6d73;
+}
+
+.form-error {
+  background: #fff2ed;
+  border: 1px solid #efb39d;
+  border-radius: 8px;
+  color: #9d3516;
+  font-weight: 800;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.text-link {
+  color: #1c3d3a;
+  font-weight: 900;
+  text-align: center;
+}
+
+.text-button {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
 .eyebrow {
   color: #7a4f24;
   font-size: 0.78rem;
@@ -211,6 +280,18 @@ small {
   padding: 11px 15px;
 }
 
+.ghost-button {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  float: right;
+  font: inherit;
+  font-weight: 900;
+  padding: 8px 11px;
+}
+
 .workspace {
   display: grid;
   gap: 18px;
@@ -278,6 +359,13 @@ small {
   display: grid;
   gap: 14px;
   grid-template-columns: 1fr 1.2fr minmax(110px, 140px) minmax(150px, 180px);
+}
+
+.user-form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 16px;
 }
 
 .purchase-form label {
@@ -386,6 +474,21 @@ small {
   padding: 24px 20px;
 }
 
+.client-auth {
+  display: grid;
+  gap: 12px;
+  padding: 24px 20px;
+}
+
+.client-auth h1 {
+  font-size: 2.3rem;
+}
+
+.compact-switch {
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+}
+
 .client-hero select {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -443,7 +546,9 @@ small {
   .seller-layout,
   .two-columns,
   .purchase-form,
-  .stats-grid {
+  .stats-grid,
+  .user-form,
+  .launcher-grid {
     grid-template-columns: 1fr;
   }
 

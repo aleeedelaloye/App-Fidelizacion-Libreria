@@ -1,50 +1,52 @@
-# React + TypeScript + Vite
+# App Fidelizacion Libreria
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema MVP para una libreria con dos aplicaciones independientes:
 
-Currently, two official plugins are available:
+- `owner.html`: servidor/panel Windows para dueno y vendedores.
+- `client.html`: app tipo APK para clientes.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Funciones
 
-## Expanding the ESLint configuration
+- Login con clave.
+- Roles: `owner`, `seller`, `client`.
+- Alta de clientes y usuarios internos.
+- Rango de cliente por puntos: Bronce, Plata, Oro, Diamante.
+- Registro de compras con regla `$10 = 1 punto`.
+- Canjes con descuento automatico de puntos.
+- Historial de compras y canjes.
+- Base demo en `localStorage` para probar sin servidor real.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Usuarios demo
 
-- Configure the top-level `parserOptions` property like this:
+- Dueno: `admin@libreria.com` / `admin123`
+- Vendedor: `vendedor@libreria.com` / `vender123`
+- Clientes demo: cualquier cliente generado usa clave `cliente123`
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Ejecutar
+
+```bash
+npm install
+npm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Abrir:
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- Inicio: `http://127.0.0.1:5173/`
+- Servidor Windows: `http://127.0.0.1:5173/owner.html`
+- APK clientes: `http://127.0.0.1:5173/client.html`
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+Tambien se puede levantar cada entrada:
+
+```bash
+npm run dev:owner
+npm run dev:client
 ```
+
+## Proximo paso para produccion
+
+Esta version simula la base en el navegador. Para llevarlo a produccion:
+
+- Backend servidor Windows: Node/Express o .NET con base SQLite/PostgreSQL.
+- App Windows: empaquetar `owner.html` con Electron o Tauri.
+- APK clientes: empaquetar `client.html` con Capacitor.
+- Seguridad real: claves hasheadas, sesiones JWT, HTTPS y permisos por rol.
