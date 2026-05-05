@@ -3,9 +3,11 @@ import '../App.css'
 import {
   Client,
   LoyaltyData,
+  Promotion,
   Role,
   User,
   authenticate,
+  bestPointsPromotion,
   createDemoData,
   currency,
   loadData,
@@ -32,6 +34,15 @@ function OwnerApp() {
     password: '',
     role: 'seller' as Role,
   })
+  const [newPromotion, setNewPromotion] = useState({
+    title: '',
+    description: '',
+    type: 'pointsMultiplier' as Promotion['type'],
+    value: '2',
+    startDate: today(),
+    endDate: today(),
+    minRank: 'Bronce' as Promotion['minRank'],
+  })
   const [purchase, setPurchase] = useState({ amount: '', detail: '' })
   const [loginError, setLoginError] = useState('')
 
@@ -51,7 +62,13 @@ function OwnerApp() {
   )
   const totalSales = data.purchases.reduce((sum, item) => sum + item.amount, 0)
   const totalPoints = data.clients.reduce((sum, client) => sum + client.points, 0)
-  const previewPoints = Math.floor(Number(purchase.amount || 0) * pointsPerPeso)
+  const activePointsPromotion = selectedClient
+    ? bestPointsPromotion(data.promotions, selectedClient.rank)
+    : undefined
+  const previewBasePoints = Math.floor(Number(purchase.amount || 0) * pointsPerPeso)
+  const previewPoints = activePointsPromotion
+    ? Math.floor(previewBasePoints * activePointsPromotion.value)
+    : previewBasePoints
   const canManageUsers = session?.role === 'owner'
 
   const usersByRole = useMemo(
@@ -143,12 +160,56 @@ function OwnerApp() {
     setNewUser({ name: '', email: '', password: '', role: 'seller' })
   }
 
+  function addPromotion(event: FormEvent) {
+    event.preventDefault()
+    if (!canManageUsers || !newPromotion.title.trim()) return
+
+    const promotion: Promotion = {
+      id: nextId(data.promotions),
+      title: newPromotion.title.trim(),
+      description: newPromotion.description.trim() || 'Promocion de libreria',
+      type: newPromotion.type,
+      value: Number(newPromotion.value),
+      startDate: newPromotion.startDate,
+      endDate: newPromotion.endDate,
+      minRank: newPromotion.minRank,
+      active: true,
+    }
+
+    persist({ ...data, promotions: [promotion, ...data.promotions] })
+    setNewPromotion({
+      title: '',
+      description: '',
+      type: 'pointsMultiplier',
+      value: '2',
+      startDate: today(),
+      endDate: today(),
+      minRank: 'Bronce',
+    })
+  }
+
+  function togglePromotion(promotionId: number) {
+    if (!canManageUsers) return
+    persist({
+      ...data,
+      promotions: data.promotions.map((promotion) =>
+        promotion.id === promotionId
+          ? { ...promotion, active: !promotion.active }
+          : promotion,
+      ),
+    })
+  }
+
   function addPurchase(event: FormEvent) {
     event.preventDefault()
     const amount = Number(purchase.amount)
     if (!selectedClient || amount <= 0) return
 
-    const points = Math.floor(amount * pointsPerPeso)
+    const basePoints = Math.floor(amount * pointsPerPeso)
+    const pointsPromotion = bestPointsPromotion(data.promotions, selectedClient.rank)
+    const points = pointsPromotion
+      ? Math.floor(basePoints * pointsPromotion.value)
+      : basePoints
     const updatedClients = data.clients.map((client) => {
       if (client.id !== selectedClient.id) return client
       const nextPoints = client.points + points
@@ -165,7 +226,11 @@ function OwnerApp() {
           date: today(),
           amount,
           points,
-          detail: purchase.detail.trim() || 'Compra en libreria',
+          detail:
+            purchase.detail.trim() ||
+            (pointsPromotion
+              ? `Compra con promo ${pointsPromotion.title}`
+              : 'Compra en libreria'),
         },
         ...data.purchases,
       ],
@@ -341,6 +406,10 @@ function OwnerApp() {
               <span>Usuarios</span>
               <strong>{data.users.length}</strong>
             </article>
+            <article className="metric">
+              <span>Promociones</span>
+              <strong>{data.promotions.filter((item) => item.active).length}</strong>
+            </article>
           </div>
 
           {selectedClient && (
@@ -392,6 +461,12 @@ function OwnerApp() {
                   Registrar compra
                 </button>
               </form>
+              {activePointsPromotion && (
+                <p className="promo-note">
+                  Promo aplicada: {activePointsPromotion.title} x
+                  {activePointsPromotion.value} puntos.
+                </p>
+              )}
             </div>
           )}
 
@@ -448,53 +523,181 @@ function OwnerApp() {
           </div>
 
           {canManageUsers && (
-            <section className="panel">
-              <div className="section-title">
-                <span>Usuarios y permisos</span>
-                <strong>
-                  Duenos {usersByRole.owner} - Vendedores {usersByRole.seller}
-                </strong>
-              </div>
-              <form className="user-form" onSubmit={addUser}>
-                <input
-                  className="field"
-                  placeholder="Nombre"
-                  value={newUser.name}
-                  onChange={(event) =>
-                    setNewUser({ ...newUser, name: event.target.value })
-                  }
-                />
-                <input
-                  className="field"
-                  placeholder="Email"
-                  value={newUser.email}
-                  onChange={(event) =>
-                    setNewUser({ ...newUser, email: event.target.value })
-                  }
-                />
-                <input
-                  className="field"
-                  placeholder="Clave"
-                  value={newUser.password}
-                  onChange={(event) =>
-                    setNewUser({ ...newUser, password: event.target.value })
-                  }
-                />
-                <select
-                  className="field"
-                  value={newUser.role}
-                  onChange={(event) =>
-                    setNewUser({ ...newUser, role: event.target.value as Role })
-                  }
-                >
-                  <option value="seller">Vendedor</option>
-                  <option value="owner">Dueno</option>
-                </select>
-                <button className="primary-button" type="submit">
-                  Crear usuario
-                </button>
-              </form>
-            </section>
+            <>
+              <section className="panel">
+                <div className="section-title">
+                  <span>Gestion de promociones</span>
+                  <strong>{data.promotions.length}</strong>
+                </div>
+                <form className="promotion-form" onSubmit={addPromotion}>
+                  <input
+                    className="field"
+                    placeholder="Nombre de promocion"
+                    value={newPromotion.title}
+                    onChange={(event) =>
+                      setNewPromotion({
+                        ...newPromotion,
+                        title: event.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    className="field"
+                    placeholder="Descripcion"
+                    value={newPromotion.description}
+                    onChange={(event) =>
+                      setNewPromotion({
+                        ...newPromotion,
+                        description: event.target.value,
+                      })
+                    }
+                  />
+                  <select
+                    className="field"
+                    value={newPromotion.type}
+                    onChange={(event) =>
+                      setNewPromotion({
+                        ...newPromotion,
+                        type: event.target.value as Promotion['type'],
+                        value:
+                          event.target.value === 'pointsMultiplier' ? '2' : '10',
+                      })
+                    }
+                  >
+                    <option value="pointsMultiplier">Multiplica puntos</option>
+                    <option value="discount">Descuento visible</option>
+                  </select>
+                  <input
+                    className="field"
+                    type="number"
+                    min="1"
+                    placeholder="Valor"
+                    value={newPromotion.value}
+                    onChange={(event) =>
+                      setNewPromotion({
+                        ...newPromotion,
+                        value: event.target.value,
+                      })
+                    }
+                  />
+                  <select
+                    className="field"
+                    value={newPromotion.minRank}
+                    onChange={(event) =>
+                      setNewPromotion({
+                        ...newPromotion,
+                        minRank: event.target.value as Promotion['minRank'],
+                      })
+                    }
+                  >
+                    <option value="Bronce">Bronce</option>
+                    <option value="Plata">Plata</option>
+                    <option value="Oro">Oro</option>
+                    <option value="Diamante">Diamante</option>
+                  </select>
+                  <input
+                    className="field"
+                    type="date"
+                    value={newPromotion.startDate}
+                    onChange={(event) =>
+                      setNewPromotion({
+                        ...newPromotion,
+                        startDate: event.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    className="field"
+                    type="date"
+                    value={newPromotion.endDate}
+                    onChange={(event) =>
+                      setNewPromotion({
+                        ...newPromotion,
+                        endDate: event.target.value,
+                      })
+                    }
+                  />
+                  <button className="primary-button" type="submit">
+                    Crear promo
+                  </button>
+                </form>
+                <div className="promotion-list">
+                  {data.promotions.map((promotion) => (
+                    <article className="promotion-card" key={promotion.id}>
+                      <span>
+                        <strong>{promotion.title}</strong>
+                        <small>
+                          {promotion.description} - Desde {promotion.minRank} -{' '}
+                          {promotion.startDate} a {promotion.endDate}
+                        </small>
+                      </span>
+                      <b>
+                        {promotion.type === 'pointsMultiplier'
+                          ? `x${promotion.value} pts`
+                          : `${promotion.value}%`}
+                      </b>
+                      <button
+                        className="secondary-button"
+                        onClick={() => togglePromotion(promotion.id)}
+                      >
+                        {promotion.active ? 'Pausar' : 'Activar'}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section className="panel">
+                <div className="section-title">
+                  <span>Usuarios y permisos</span>
+                  <strong>
+                    Duenos {usersByRole.owner} - Vendedores {usersByRole.seller}
+                  </strong>
+                </div>
+                <form className="user-form" onSubmit={addUser}>
+                  <input
+                    className="field"
+                    placeholder="Nombre"
+                    value={newUser.name}
+                    onChange={(event) =>
+                      setNewUser({ ...newUser, name: event.target.value })
+                    }
+                  />
+                  <input
+                    className="field"
+                    placeholder="Email"
+                    value={newUser.email}
+                    onChange={(event) =>
+                      setNewUser({ ...newUser, email: event.target.value })
+                    }
+                  />
+                  <input
+                    className="field"
+                    placeholder="Clave"
+                    value={newUser.password}
+                    onChange={(event) =>
+                      setNewUser({ ...newUser, password: event.target.value })
+                    }
+                  />
+                  <select
+                    className="field"
+                    value={newUser.role}
+                    onChange={(event) =>
+                      setNewUser({
+                        ...newUser,
+                        role: event.target.value as Role,
+                      })
+                    }
+                  >
+                    <option value="seller">Vendedor</option>
+                    <option value="owner">Dueno</option>
+                  </select>
+                  <button className="primary-button" type="submit">
+                    Crear usuario
+                  </button>
+                </form>
+              </section>
+            </>
           )}
         </section>
       </section>

@@ -45,12 +45,25 @@ export type Reward = {
   description: string
 }
 
+export type Promotion = {
+  id: number
+  title: string
+  description: string
+  type: 'pointsMultiplier' | 'discount'
+  value: number
+  startDate: string
+  endDate: string
+  minRank: Rank
+  active: boolean
+}
+
 export type LoyaltyData = {
   users: User[]
   clients: Client[]
   purchases: Purchase[]
   redemptions: Redemption[]
   rewards: Reward[]
+  promotions: Promotion[]
 }
 
 const storageKey = 'bookstore-loyalty-db-v2'
@@ -80,6 +93,31 @@ const rewards: Reward[] = [
     title: 'Marcadores artisticos',
     points: 900,
     description: 'Set de color para estudiantes y artistas.',
+  },
+]
+
+const promotions: Promotion[] = [
+  {
+    id: 1,
+    title: 'Semana del lector',
+    description: 'Duplica puntos en compras de literatura y novedades.',
+    type: 'pointsMultiplier',
+    value: 2,
+    startDate: today(),
+    endDate: daysFromNow(14),
+    minRank: 'Bronce',
+    active: true,
+  },
+  {
+    id: 2,
+    title: 'Beneficio Oro',
+    description: 'Descuento especial para clientes de rango Oro o superior.',
+    type: 'discount',
+    value: 15,
+    startDate: today(),
+    endDate: daysFromNow(30),
+    minRank: 'Oro',
+    active: true,
   },
 ]
 
@@ -165,6 +203,35 @@ function daysAgo(days: number) {
   const date = new Date()
   date.setDate(date.getDate() - days)
   return date.toISOString().slice(0, 10)
+}
+
+function daysFromNow(days: number) {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+function rankWeight(rank: Rank) {
+  return ['Bronce', 'Plata', 'Oro', 'Diamante'].indexOf(rank)
+}
+
+export function promotionApplies(promotion: Promotion, rank: Rank, date = today()) {
+  return (
+    promotion.active &&
+    promotion.startDate <= date &&
+    promotion.endDate >= date &&
+    rankWeight(rank) >= rankWeight(promotion.minRank)
+  )
+}
+
+export function bestPointsPromotion(promotionsList: Promotion[], rank: Rank) {
+  return promotionsList
+    .filter(
+      (promotion) =>
+        promotion.type === 'pointsMultiplier' &&
+        promotionApplies(promotion, rank),
+    )
+    .sort((a, b) => b.value - a.value)[0]
 }
 
 export function createDemoData(clientCount = 24): LoyaltyData {
@@ -268,6 +335,7 @@ export function createDemoData(clientCount = 24): LoyaltyData {
     purchases: purchases.sort((a, b) => b.date.localeCompare(a.date)),
     redemptions: redemptions.sort((a, b) => b.date.localeCompare(a.date)),
     rewards,
+    promotions,
   }
 }
 
@@ -279,7 +347,14 @@ export function loadData() {
     return data
   }
 
-  return JSON.parse(saved) as LoyaltyData
+  const data = JSON.parse(saved) as LoyaltyData
+  if (!data.promotions) {
+    const migratedData = { ...data, promotions }
+    saveData(migratedData)
+    return migratedData
+  }
+
+  return data
 }
 
 export function saveData(data: LoyaltyData) {

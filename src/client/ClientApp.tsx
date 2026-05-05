@@ -7,6 +7,7 @@ import {
   authenticate,
   loadData,
   nextId,
+  promotionApplies,
   rankForPoints,
   saveData,
 } from '../shared/store'
@@ -30,6 +31,11 @@ function ClientApp() {
   const client = data.clients.find((item) => item.id === session?.clientId)
   const purchases = data.purchases.filter((item) => item.clientId === client?.id)
   const redemptions = data.redemptions.filter((item) => item.clientId === client?.id)
+  const activePromotions = client
+    ? data.promotions.filter((promotion) =>
+        promotionApplies(promotion, client.rank),
+      )
+    : []
 
   function persist(nextData: LoyaltyData) {
     setData(nextData)
@@ -187,6 +193,27 @@ function ClientApp() {
           <strong>{client.points}</strong>
           <span>{client.rank} - puntos disponibles</span>
         </header>
+
+        <section className="client-section">
+          <h2>Promociones activas</h2>
+          {activePromotions.length ? (
+            activePromotions.map((promotion) => (
+              <article className="client-promotion" key={promotion.id}>
+                <span>
+                  <strong>{promotion.title}</strong>
+                  <small>{promotion.description}</small>
+                </span>
+                <b>
+                  {promotion.type === 'pointsMultiplier'
+                    ? `x${promotion.value}`
+                    : `${promotion.value}%`}
+                </b>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">Sin promociones disponibles.</p>
+          )}
+        </section>
 
         <section className="client-section">
           <h2>Canjes disponibles</h2>

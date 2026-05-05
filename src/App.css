@@ -300,7 +300,7 @@ small {
 .stats-grid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 
 .metric {
@@ -366,6 +366,53 @@ small {
   gap: 12px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-top: 16px;
+}
+
+.promotion-form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.promotion-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.promotion-card,
+.client-promotion {
+  align-items: center;
+  background: #fffaf1;
+  border: 1px solid #ead2a9;
+  border-radius: 8px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+.promotion-card span,
+.client-promotion span {
+  display: grid;
+  gap: 3px;
+}
+
+.promotion-card b,
+.client-promotion b {
+  color: #bb6b1e;
+  white-space: nowrap;
+}
+
+.promo-note {
+  background: #fffaf1;
+  border: 1px solid #ead2a9;
+  border-radius: 8px;
+  color: #77522d;
+  font-weight: 900;
+  margin: 0;
+  padding: 10px 12px;
 }
 
 .purchase-form label {
@@ -548,6 +595,7 @@ small {
   .purchase-form,
   .stats-grid,
   .user-form,
+  .promotion-form,
   .launcher-grid {
     grid-template-columns: 1fr;
   }
