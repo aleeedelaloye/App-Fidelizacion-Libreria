@@ -542,7 +542,7 @@ function OwnerApp() {
           <button className="primary-button" type="submit">
             Entrar al servidor
           </button>
-          <a className="text-link" href="/client.html">
+          <a className="text-link" href="./client.html">
             Abrir app de clientes
           </a>
         </form>
@@ -567,7 +567,7 @@ function OwnerApp() {
           <button className="secondary-button" onClick={resetDemoData}>
             Regenerar base
           </button>
-          <a className="secondary-button text-button" href="/client.html">
+          <a className="secondary-button text-button" href="./client.html">
             Ver APK cliente
           </a>
           <button className="secondary-button" onClick={() => setSession(null)}>

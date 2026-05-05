@@ -281,7 +281,7 @@ function ClientApp() {
                 Recuperar clave demo
               </button>
             )}
-            <a className="text-link" href="/owner.html">
+            <a className="text-link" href="./owner.html">
               Soy vendedor o dueno
             </a>
           </form>
