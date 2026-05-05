@@ -52,6 +52,21 @@ La API demo corre en `http://127.0.0.1:8787` y guarda la base en
 `data/loyalty-db.json`. Ese archivo queda fuera de Git para no subir datos
 reales de clientes.
 
+## Generar APK demo
+
+La APK de clientes se genera con Capacitor:
+
+```bash
+npm run android:apk
+```
+
+Salida debug:
+
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+Para compilar se necesita Android Studio/JDK y Android SDK. En esta maquina se
+usa el Java incluido en Android Studio.
+
 ## Proximo paso para produccion
 
 Esta version simula la base en el navegador. Para llevarlo a produccion:

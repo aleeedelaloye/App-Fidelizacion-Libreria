@@ -10,6 +10,10 @@
     "dev:owner": "vite --host 127.0.0.1 --port 5174 --open /owner.html",
     "dev:client": "vite --host 127.0.0.1 --port 5175 --open /client.html",
     "build": "tsc -b && vite build",
+    "build:apk-web": "npm run build && node scripts/prepare-client-apk.mjs",
+    "android:add": "npx cap add android",
+    "android:sync": "npm run build:apk-web && npx cap sync android",
+    "android:apk": "npm run android:sync && cd android && gradlew.bat assembleDebug",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -18,6 +22,9 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
     "@eslint/js": "^9.13.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
