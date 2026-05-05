@@ -1,4 +1,5 @@
 import './App.css'
+import { appPage } from './shared/navigation'
 
 function App() {
   return (
@@ -11,12 +12,12 @@ function App() {
           y APK para clientes.
         </p>
         <div className="launcher-grid">
-          <a className="panel launcher-card" href="./owner.html">
+          <a className="panel launcher-card" href={appPage('owner.html')}>
             <span>Windows</span>
             <strong>Servidor del dueno</strong>
             <small>Usuarios, roles, clientes, compras, puntos y canjes.</small>
           </a>
-          <a className="panel launcher-card" href="./client.html">
+          <a className="panel launcher-card" href={appPage('client.html')}>
             <span>APK</span>
             <strong>App de clientes</strong>
             <small>Registro, clave, rango, puntos e historiales.</small>

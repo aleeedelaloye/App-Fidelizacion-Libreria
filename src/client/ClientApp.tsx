@@ -13,6 +13,7 @@ import {
   saveData,
   syncFromServer,
 } from '../shared/store'
+import { appPage } from '../shared/navigation'
 
 function ClientApp() {
   const [data, setData] = useState<LoyaltyData>(() => loadData())
@@ -281,7 +282,7 @@ function ClientApp() {
                 Recuperar clave demo
               </button>
             )}
-            <a className="text-link" href="./owner.html">
+            <a className="text-link" href={appPage('owner.html')}>
               Soy vendedor o dueno
             </a>
           </form>
