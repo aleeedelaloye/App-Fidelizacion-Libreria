@@ -69,23 +69,36 @@
 
 .panel-stage {
   display: block;
+  margin: 0 auto;
+  max-width: 1440px;
   overflow: hidden;
+  width: 100%;
 }
 
-.panel-stage .client-panel {
+.panel-stage .client-panel,
+.panel-stage .module-panel {
   max-width: none;
+  width: 100%;
 }
 
 .module-workspace {
+  display: block;
   min-width: 0;
+  width: 100%;
 }
 
 .module-panel.is-active,
-.module-workspace.is-active,
 .stats-grid.is-active,
 .two-columns.is-active {
   animation: slide-panel-in 280ms ease both;
   display: grid;
+  width: 100%;
+}
+
+.module-workspace.is-active {
+  animation: slide-panel-in 280ms ease both;
+  display: block;
+  width: 100%;
 }
 
 .module-panel.is-hidden,
@@ -599,6 +612,10 @@ small {
   display: grid;
   gap: 18px;
   grid-template-columns: 1fr 1fr;
+}
+
+.panel-stage .two-columns.is-active {
+  grid-template-columns: 1fr;
 }
 
 .reward-list,
