@@ -19,7 +19,7 @@ Sistema MVP para una libreria con dos aplicaciones independientes:
 - Historial de compras y canjes.
 - Exportes CSV y opcion de imprimir/guardar PDF desde el navegador.
 - APK demo con tarjeta de socio, QR visual y progreso al proximo rango.
-- Base demo en `localStorage` para probar sin servidor real.
+- Base compartida demo por API local con respaldo en `localStorage`.
 
 ## Usuarios demo
 
@@ -31,6 +31,7 @@ Sistema MVP para una libreria con dos aplicaciones independientes:
 
 ```bash
 npm install
+npm run api
 npm run dev
 ```
 
@@ -47,11 +48,15 @@ npm run dev:owner
 npm run dev:client
 ```
 
+La API demo corre en `http://127.0.0.1:8787` y guarda la base en
+`data/loyalty-db.json`. Ese archivo queda fuera de Git para no subir datos
+reales de clientes.
+
 ## Proximo paso para produccion
 
 Esta version simula la base en el navegador. Para llevarlo a produccion:
 
-- Backend servidor Windows: Node/Express o .NET con base SQLite/PostgreSQL.
+- Backend servidor Windows: reemplazar el JSON demo por SQLite/PostgreSQL.
 - App Windows: empaquetar `owner.html` con Electron o Tauri.
 - APK clientes: empaquetar `client.html` con Capacitor.
 - Seguridad real: claves hasheadas, sesiones JWT, HTTPS y permisos por rol.

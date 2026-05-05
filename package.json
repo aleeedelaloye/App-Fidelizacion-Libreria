@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "api": "node server.mjs",
     "dev": "vite",
+    "dev:full": "node server.mjs",
     "dev:owner": "vite --host 127.0.0.1 --port 5174 --open /owner.html",
     "dev:client": "vite --host 127.0.0.1 --port 5175 --open /client.html",
     "build": "tsc -b && vite build",

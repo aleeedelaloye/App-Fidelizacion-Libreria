@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import '../App.css'
 import {
   Client,
@@ -16,6 +16,7 @@ import {
   pointsForAmount,
   rankForPoints,
   saveData,
+  syncFromServer,
   today,
 } from '../shared/store'
 
@@ -69,6 +70,7 @@ function OwnerApp() {
   const [purchase, setPurchase] = useState({ amount: '', detail: '' })
   const [loginError, setLoginError] = useState('')
   const [activePanel, setActivePanel] = useState<OwnerPanel>('clientes')
+  const [syncStatus, setSyncStatus] = useState('Base local')
 
   const selectedClient = data.clients.find(
     (client) => client.id === selectedClientId,
@@ -130,7 +132,25 @@ function OwnerApp() {
   function persist(nextData: LoyaltyData) {
     setData(nextData)
     saveData(nextData)
+    setSyncStatus('Guardado en base compartida')
   }
+
+  async function refreshSharedData() {
+    try {
+      setSyncStatus('Sincronizando...')
+      const sharedData = await syncFromServer()
+      setData(sharedData)
+      setSettingsForm(sharedData.settings)
+      setSelectedClientId(sharedData.clients[0]?.id)
+      setSyncStatus('Base compartida conectada')
+    } catch {
+      setSyncStatus('API offline: usando base local')
+    }
+  }
+
+  useEffect(() => {
+    void refreshSharedData()
+  }, [])
 
   function pointsExpireAt() {
     const date = new Date()
@@ -537,10 +557,13 @@ function OwnerApp() {
           <p className="eyebrow">Servidor Windows privado</p>
           <h1>Panel de libreria</h1>
           <span className="muted">
-            {session.name} - {session.role}
+            {session.name} - {session.role} - {syncStatus}
           </span>
         </div>
         <div className="header-actions">
+          <button className="secondary-button" onClick={refreshSharedData}>
+            Sincronizar
+          </button>
           <button className="secondary-button" onClick={resetDemoData}>
             Regenerar base
           </button>

@@ -93,6 +93,7 @@ export type LoyaltyData = {
 }
 
 const storageKey = 'bookstore-loyalty-db-v2'
+const apiBaseUrl = 'http://127.0.0.1:8787'
 export const pointsPerPeso = 0.1
 
 export const defaultSettings: LoyaltySettings = {
@@ -459,6 +460,40 @@ export function loadData() {
 
 export function saveData(data: LoyaltyData) {
   localStorage.setItem(storageKey, JSON.stringify(data))
+  void saveServerData(data)
+}
+
+export async function fetchServerData() {
+  const response = await fetch(`${apiBaseUrl}/api/data`)
+  if (!response.ok) {
+    throw new Error('No se pudo leer la base compartida.')
+  }
+  const payload = (await response.json()) as { data: LoyaltyData | null }
+  return payload.data
+}
+
+export async function saveServerData(data: LoyaltyData) {
+  try {
+    await fetch(`${apiBaseUrl}/api/data`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  } catch {
+    // The desktop demo keeps working with localStorage if the API is offline.
+  }
+}
+
+export async function syncFromServer() {
+  const serverData = await fetchServerData()
+  if (!serverData) {
+    const localData = loadData()
+    await saveServerData(localData)
+    return localData
+  }
+
+  localStorage.setItem(storageKey, JSON.stringify(serverData))
+  return loadData()
 }
 
 export function authenticate(data: LoyaltyData, identifier: string, password: string) {

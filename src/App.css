@@ -384,6 +384,10 @@ small {
   padding: 8px 11px;
 }
 
+.sync-ghost {
+  margin-right: 8px;
+}
+
 .workspace {
   display: grid;
   gap: 18px;

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import '../App.css'
 import {
   Client,
@@ -11,6 +11,7 @@ import {
   promotionApplies,
   rankForPoints,
   saveData,
+  syncFromServer,
 } from '../shared/store'
 
 function ClientApp() {
@@ -29,6 +30,7 @@ function ClientApp() {
     password: '',
   })
   const [error, setError] = useState('')
+  const [syncStatus, setSyncStatus] = useState('Base local')
 
   const client = data.clients.find((item) => item.id === session?.clientId)
   const purchases = data.purchases.filter((item) => item.clientId === client?.id)
@@ -54,7 +56,23 @@ function ClientApp() {
   function persist(nextData: LoyaltyData) {
     setData(nextData)
     saveData(nextData)
+    setSyncStatus('Datos sincronizados')
   }
+
+  async function refreshSharedData() {
+    try {
+      setSyncStatus('Sincronizando...')
+      const sharedData = await syncFromServer()
+      setData(sharedData)
+      setSyncStatus('Base compartida conectada')
+    } catch {
+      setSyncStatus('API offline: usando base local')
+    }
+  }
+
+  useEffect(() => {
+    void refreshSharedData()
+  }, [])
 
   function pointsExpireAt() {
     const date = new Date()
@@ -172,8 +190,9 @@ function ClientApp() {
             className="client-auth"
             onSubmit={mode === 'login' ? handleLogin : handleRegister}
           >
-            <p className="eyebrow">APK clientes</p>
-            <h1>{data.settings.bookstoreName}</h1>
+          <p className="eyebrow">APK clientes</p>
+          <h1>{data.settings.bookstoreName}</h1>
+          <p className="muted">{syncStatus}</p>
             <div className="mode-switch compact-switch">
               <button
                 className={mode === 'login' ? 'active' : ''}
@@ -268,6 +287,9 @@ function ClientApp() {
         <header className="client-hero member-hero">
           <button className="ghost-button" onClick={() => setSession(null)}>
             Salir
+          </button>
+          <button className="ghost-button sync-ghost" onClick={refreshSharedData}>
+            Sync
           </button>
           <p>{data.settings.bookstoreName}</p>
           <div className="member-card">
