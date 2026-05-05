@@ -10,10 +10,15 @@ Sistema MVP para una libreria con dos aplicaciones independientes:
 - Login con clave.
 - Roles: `owner`, `seller`, `client`.
 - Alta de clientes y usuarios internos.
+- Login de clientes por email, DNI o telefono.
 - Rango de cliente por puntos: Bronce, Plata, Oro, Diamante.
+- Panel de configuracion para reglas de puntos, vencimiento, rangos, beneficios y datos de la libreria.
 - Registro de compras con regla `$10 = 1 punto`.
-- Canjes con descuento automatico de puntos.
+- Gestion de canjes: crear, editar, pausar y eliminar premios.
+- Promociones configurables y notificaciones para clientes.
 - Historial de compras y canjes.
+- Exportes CSV y opcion de imprimir/guardar PDF desde el navegador.
+- APK demo con tarjeta de socio, QR visual y progreso al proximo rango.
 - Base demo en `localStorage` para probar sin servidor real.
 
 ## Usuarios demo

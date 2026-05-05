@@ -6,7 +6,8 @@ export type User = {
   id: number
   name: string
   email: string
-  password: string
+  password?: string
+  passwordHash?: string
   role: Role
   clientId?: number
   active: boolean
@@ -15,10 +16,12 @@ export type User = {
 export type Client = {
   id: number
   name: string
+  dni: string
   phone: string
   email: string
   points: number
   rank: Rank
+  pointsExpireAt: string
 }
 
 export type Purchase = {
@@ -43,6 +46,7 @@ export type Reward = {
   title: string
   points: number
   description: string
+  active: boolean
 }
 
 export type Promotion = {
@@ -57,6 +61,26 @@ export type Promotion = {
   active: boolean
 }
 
+export type LoyaltySettings = {
+  bookstoreName: string
+  address: string
+  phone: string
+  pointsMoneyAmount: number
+  pointValue: number
+  pointsExpirationMonths: number
+  ranks: Record<Rank, { minPoints: number; benefit: string }>
+}
+
+export type Notification = {
+  id: number
+  clientId?: number
+  title: string
+  message: string
+  type: 'promotion' | 'expiration' | 'rank' | 'reward' | 'security'
+  date: string
+  read: boolean
+}
+
 export type LoyaltyData = {
   users: User[]
   clients: Client[]
@@ -64,10 +88,27 @@ export type LoyaltyData = {
   redemptions: Redemption[]
   rewards: Reward[]
   promotions: Promotion[]
+  notifications: Notification[]
+  settings: LoyaltySettings
 }
 
 const storageKey = 'bookstore-loyalty-db-v2'
 export const pointsPerPeso = 0.1
+
+export const defaultSettings: LoyaltySettings = {
+  bookstoreName: 'Libreria Punto Lector',
+  address: 'Av. Siempre Viva 123',
+  phone: '341 555 1000',
+  pointsMoneyAmount: 10,
+  pointValue: 1,
+  pointsExpirationMonths: 12,
+  ranks: {
+    Bronce: { minPoints: 0, benefit: 'Acceso a promociones generales.' },
+    Plata: { minPoints: 1000, benefit: 'Canjes anticipados y promos x2.' },
+    Oro: { minPoints: 2500, benefit: 'Descuentos exclusivos y prioridad.' },
+    Diamante: { minPoints: 5000, benefit: 'Beneficios VIP y regalos sorpresa.' },
+  },
+}
 
 const rewards: Reward[] = [
   {
@@ -75,24 +116,28 @@ const rewards: Reward[] = [
     title: '10% en literatura',
     points: 450,
     description: 'Descuento para novelas, cuentos y poesia.',
+    active: true,
   },
   {
     id: 2,
     title: 'Cuaderno premium',
     points: 700,
     description: 'Canje directo por cuaderno tapa dura.',
+    active: true,
   },
   {
     id: 3,
     title: '$3500 de credito',
     points: 1200,
     description: 'Saldo para usar en cualquier compra.',
+    active: true,
   },
   {
     id: 4,
     title: 'Marcadores artisticos',
     points: 900,
     description: 'Set de color para estudiantes y artistas.',
+    active: true,
   },
 ]
 
@@ -172,11 +217,15 @@ const purchaseDetails = [
   'Diccionario escolar',
 ]
 
-export function rankForPoints(points: number): Rank {
-  if (points >= 5000) return 'Diamante'
-  if (points >= 2500) return 'Oro'
-  if (points >= 1000) return 'Plata'
+export function rankForPoints(points: number, settings = defaultSettings): Rank {
+  if (points >= settings.ranks.Diamante.minPoints) return 'Diamante'
+  if (points >= settings.ranks.Oro.minPoints) return 'Oro'
+  if (points >= settings.ranks.Plata.minPoints) return 'Plata'
   return 'Bronce'
+}
+
+export function pointsForAmount(amount: number, settings = defaultSettings) {
+  return Math.floor((amount / settings.pointsMoneyAmount) * settings.pointValue)
 }
 
 export function currency(value: number) {
@@ -211,6 +260,12 @@ function daysFromNow(days: number) {
   return date.toISOString().slice(0, 10)
 }
 
+function monthsFromNow(months: number) {
+  const date = new Date()
+  date.setMonth(date.getMonth() + months)
+  return date.toISOString().slice(0, 10)
+}
+
 function rankWeight(rank: Rank) {
   return ['Bronce', 'Plata', 'Oro', 'Diamante'].indexOf(rank)
 }
@@ -234,6 +289,10 @@ export function bestPointsPromotion(promotionsList: Promotion[], rank: Rank) {
     .sort((a, b) => b.value - a.value)[0]
 }
 
+export function hashPassword(password: string) {
+  return btoa(password).split('').reverse().join('')
+}
+
 export function createDemoData(clientCount = 24): LoyaltyData {
   const clients: Client[] = []
   const purchases: Purchase[] = []
@@ -243,7 +302,7 @@ export function createDemoData(clientCount = 24): LoyaltyData {
       id: 1,
       name: 'Dueno Libreria',
       email: 'admin@libreria.com',
-      password: 'admin123',
+      passwordHash: hashPassword('admin123'),
       role: 'owner',
       active: true,
     },
@@ -251,7 +310,7 @@ export function createDemoData(clientCount = 24): LoyaltyData {
       id: 2,
       name: 'Vendedor Mostrador',
       email: 'vendedor@libreria.com',
-      password: 'vender123',
+      passwordHash: hashPassword('vender123'),
       role: 'seller',
       active: true,
     },
@@ -265,10 +324,12 @@ export function createDemoData(clientCount = 24): LoyaltyData {
     const client: Client = {
       id: index + 1,
       name: `${firstName} ${lastName}`,
+      dni: `${28000000 + index * 731}`,
       phone: `341 555 ${String(1000 + index * 37).slice(-4)}`,
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
       points: 0,
       rank: 'Bronce',
+      pointsExpireAt: monthsFromNow(defaultSettings.pointsExpirationMonths),
     }
 
     const purchaseCount = randomNumber(2, 7)
@@ -278,7 +339,7 @@ export function createDemoData(clientCount = 24): LoyaltyData {
       purchaseIndex += 1
     ) {
       const amount = randomNumber(45, 360) * 100
-      const points = Math.floor(amount * pointsPerPeso)
+      const points = pointsForAmount(amount)
       purchases.push({
         id: purchaseId,
         clientId: client.id,
@@ -322,7 +383,7 @@ export function createDemoData(clientCount = 24): LoyaltyData {
       id: users.length + 1,
       name: client.name,
       email: client.email,
-      password: 'cliente123',
+      passwordHash: hashPassword('cliente123'),
       role: 'client',
       clientId: client.id,
       active: true,
@@ -336,6 +397,25 @@ export function createDemoData(clientCount = 24): LoyaltyData {
     redemptions: redemptions.sort((a, b) => b.date.localeCompare(a.date)),
     rewards,
     promotions,
+    notifications: [
+      {
+        id: 1,
+        title: 'Nueva promocion activa',
+        message: 'Semana del lector duplica puntos en compras seleccionadas.',
+        type: 'promotion',
+        date: today(),
+        read: false,
+      },
+      {
+        id: 2,
+        title: 'Canje disponible',
+        message: 'Ya podes revisar premios y beneficios para tu rango.',
+        type: 'reward',
+        date: today(),
+        read: false,
+      },
+    ],
+    settings: defaultSettings,
   }
 }
 
@@ -348,25 +428,58 @@ export function loadData() {
   }
 
   const data = JSON.parse(saved) as LoyaltyData
-  if (!data.promotions) {
-    const migratedData = { ...data, promotions }
-    saveData(migratedData)
-    return migratedData
+  const migratedData: LoyaltyData = {
+    ...data,
+    rewards: (data.rewards || rewards).map((reward) => ({
+      ...reward,
+      active: reward.active ?? true,
+    })),
+    promotions: data.promotions || promotions,
+    notifications: data.notifications || [],
+    settings: data.settings || defaultSettings,
+    clients: data.clients.map((client, index) => ({
+      ...client,
+      dni: client.dni || `${28000000 + index * 731}`,
+      pointsExpireAt:
+        client.pointsExpireAt ||
+        monthsFromNow(
+          (data.settings || defaultSettings).pointsExpirationMonths,
+        ),
+      rank: rankForPoints(client.points, data.settings || defaultSettings),
+    })),
+    users: data.users.map((user) => ({
+      ...user,
+      passwordHash: user.passwordHash || hashPassword(user.password || ''),
+    })),
   }
 
-  return data
+  saveData(migratedData)
+  return migratedData
 }
 
 export function saveData(data: LoyaltyData) {
   localStorage.setItem(storageKey, JSON.stringify(data))
 }
 
-export function authenticate(data: LoyaltyData, email: string, password: string) {
+export function authenticate(data: LoyaltyData, identifier: string, password: string) {
+  const normalizedIdentifier = identifier.trim().toLowerCase()
+  const normalizedDigits = identifier.replace(/\D/g, '')
   return data.users.find(
-    (user) =>
-      user.active &&
-      user.email.toLowerCase() === email.trim().toLowerCase() &&
-      user.password === password,
+    (user) => {
+      const client = data.clients.find((item) => item.id === user.clientId)
+      const matchesIdentifier =
+        user.email.toLowerCase() === normalizedIdentifier ||
+        client?.email.toLowerCase() === normalizedIdentifier ||
+        client?.phone.replace(/\D/g, '') === normalizedDigits ||
+        client?.dni.replace(/\D/g, '') === normalizedDigits
+
+      return (
+        user.active &&
+        matchesIdentifier &&
+        (user.passwordHash || hashPassword(user.password || '')) ===
+          hashPassword(password)
+      )
+    },
   )
 }
 

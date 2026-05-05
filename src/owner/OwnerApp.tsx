@@ -10,9 +10,10 @@ import {
   bestPointsPromotion,
   createDemoData,
   currency,
+  hashPassword,
   loadData,
   nextId,
-  pointsPerPeso,
+  pointsForAmount,
   rankForPoints,
   saveData,
   today,
@@ -27,7 +28,12 @@ function OwnerApp() {
     email: 'admin@libreria.com',
     password: 'admin123',
   })
-  const [newClient, setNewClient] = useState({ name: '', phone: '', email: '' })
+  const [newClient, setNewClient] = useState({
+    name: '',
+    dni: '',
+    phone: '',
+    email: '',
+  })
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -43,6 +49,13 @@ function OwnerApp() {
     endDate: today(),
     minRank: 'Bronce' as Promotion['minRank'],
   })
+  const [settingsForm, setSettingsForm] = useState(data.settings)
+  const [rewardForm, setRewardForm] = useState({
+    id: 0,
+    title: '',
+    points: '500',
+    description: '',
+  })
   const [purchase, setPurchase] = useState({ amount: '', detail: '' })
   const [loginError, setLoginError] = useState('')
 
@@ -50,7 +63,7 @@ function OwnerApp() {
     (client) => client.id === selectedClientId,
   )
   const filteredClients = data.clients.filter((client) =>
-    `${client.name} ${client.phone} ${client.email}`
+    `${client.name} ${client.dni} ${client.phone} ${client.email}`
       .toLowerCase()
       .includes(search.toLowerCase()),
   )
@@ -65,7 +78,10 @@ function OwnerApp() {
   const activePointsPromotion = selectedClient
     ? bestPointsPromotion(data.promotions, selectedClient.rank)
     : undefined
-  const previewBasePoints = Math.floor(Number(purchase.amount || 0) * pointsPerPeso)
+  const previewBasePoints = pointsForAmount(
+    Number(purchase.amount || 0),
+    data.settings,
+  )
   const previewPoints = activePointsPromotion
     ? Math.floor(previewBasePoints * activePointsPromotion.value)
     : previewBasePoints
@@ -76,7 +92,7 @@ function OwnerApp() {
       data.users.reduce<Record<Role, number>>(
         (acc, user) => {
           acc[user.role] += 1
-          return acc
+      return acc
         },
         { owner: 0, seller: 0, client: 0 },
       ),
@@ -86,6 +102,12 @@ function OwnerApp() {
   function persist(nextData: LoyaltyData) {
     setData(nextData)
     saveData(nextData)
+  }
+
+  function pointsExpireAt() {
+    const date = new Date()
+    date.setMonth(date.getMonth() + data.settings.pointsExpirationMonths)
+    return date.toISOString().slice(0, 10)
   }
 
   function handleLogin(event: FormEvent) {
@@ -103,6 +125,7 @@ function OwnerApp() {
   function resetDemoData() {
     const nextData = createDemoData(30)
     persist(nextData)
+    setSettingsForm(nextData.settings)
     setSelectedClientId(nextData.clients[0].id)
     setSearch('')
   }
@@ -114,10 +137,12 @@ function OwnerApp() {
     const client: Client = {
       id: nextId(data.clients),
       name: newClient.name.trim(),
+      dni: newClient.dni.trim(),
       phone: newClient.phone.trim(),
       email: newClient.email.trim(),
       points: 0,
       rank: 'Bronce',
+      pointsExpireAt: pointsExpireAt(),
     }
 
     const user: User | null = client.email
@@ -125,7 +150,7 @@ function OwnerApp() {
           id: nextId(data.users),
           name: client.name,
           email: client.email,
-          password: 'cliente123',
+          passwordHash: hashPassword('cliente123'),
           role: 'client',
           clientId: client.id,
           active: true,
@@ -138,7 +163,7 @@ function OwnerApp() {
       users: user ? [user, ...data.users] : data.users,
     })
     setSelectedClientId(client.id)
-    setNewClient({ name: '', phone: '', email: '' })
+    setNewClient({ name: '', dni: '', phone: '', email: '' })
   }
 
   function addUser(event: FormEvent) {
@@ -151,7 +176,7 @@ function OwnerApp() {
       id: nextId(data.users),
       name: newUser.name.trim(),
       email: newUser.email.trim(),
-      password: newUser.password,
+      passwordHash: hashPassword(newUser.password),
       role: newUser.role,
       active: true,
     }
@@ -200,12 +225,166 @@ function OwnerApp() {
     })
   }
 
+  function saveSettings(event: FormEvent) {
+    event.preventDefault()
+    persist({
+      ...data,
+      settings: settingsForm,
+      clients: data.clients.map((client) => ({
+        ...client,
+        rank: rankForPoints(client.points, settingsForm),
+      })),
+      notifications: [
+        {
+          id: nextId(data.notifications),
+          title: 'Configuracion actualizada',
+          message: 'La libreria actualizo reglas de puntos y beneficios.',
+          type: 'security',
+          date: today(),
+          read: false,
+        },
+        ...data.notifications,
+      ],
+    })
+  }
+
+  function saveReward(event: FormEvent) {
+    event.preventDefault()
+    if (!rewardForm.title.trim()) return
+
+    if (rewardForm.id) {
+      persist({
+        ...data,
+        rewards: data.rewards.map((reward) =>
+          reward.id === rewardForm.id
+            ? {
+                ...reward,
+                title: rewardForm.title.trim(),
+                points: Number(rewardForm.points),
+                description: rewardForm.description.trim(),
+              }
+            : reward,
+        ),
+      })
+    } else {
+      persist({
+        ...data,
+        rewards: [
+          {
+            id: nextId(data.rewards),
+            title: rewardForm.title.trim(),
+            points: Number(rewardForm.points),
+            description: rewardForm.description.trim(),
+            active: true,
+          },
+          ...data.rewards,
+        ],
+        notifications: [
+          {
+            id: nextId(data.notifications),
+            title: 'Nuevo canje disponible',
+            message: `${rewardForm.title.trim()} ya esta disponible en la app.`,
+            type: 'reward',
+            date: today(),
+            read: false,
+          },
+          ...data.notifications,
+        ],
+      })
+    }
+
+    setRewardForm({ id: 0, title: '', points: '500', description: '' })
+  }
+
+  function editReward(rewardId: number) {
+    const reward = data.rewards.find((item) => item.id === rewardId)
+    if (!reward) return
+    setRewardForm({
+      id: reward.id,
+      title: reward.title,
+      points: String(reward.points),
+      description: reward.description,
+    })
+  }
+
+  function toggleReward(rewardId: number) {
+    persist({
+      ...data,
+      rewards: data.rewards.map((reward) =>
+        reward.id === rewardId ? { ...reward, active: !reward.active } : reward,
+      ),
+    })
+  }
+
+  function deleteReward(rewardId: number) {
+    persist({
+      ...data,
+      rewards: data.rewards.filter((reward) => reward.id !== rewardId),
+    })
+  }
+
+  function downloadCsv(name: string, rows: string[][]) {
+    const csv = rows
+      .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = name
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function exportClients() {
+    downloadCsv('clientes-puntos.csv', [
+      ['Nombre', 'DNI', 'Telefono', 'Email', 'Puntos', 'Rango', 'Vencimiento'],
+      ...data.clients.map((client) => [
+        client.name,
+        client.dni,
+        client.phone,
+        client.email,
+        String(client.points),
+        client.rank,
+        client.pointsExpireAt,
+      ]),
+    ])
+  }
+
+  function exportMovements() {
+    downloadCsv('movimientos-fidelizacion.csv', [
+      ['Tipo', 'Cliente', 'Fecha', 'Detalle', 'Importe', 'Puntos'],
+      ...data.purchases.map((item) => {
+        const client = data.clients.find((current) => current.id === item.clientId)
+        return [
+          'Compra',
+          client?.name || '',
+          item.date,
+          item.detail,
+          String(item.amount),
+          String(item.points),
+        ]
+      }),
+      ...data.redemptions.map((item) => {
+        const client = data.clients.find((current) => current.id === item.clientId)
+        return [
+          'Canje',
+          client?.name || '',
+          item.date,
+          item.reward,
+          '',
+          String(item.points),
+        ]
+      }),
+    ])
+  }
+
   function addPurchase(event: FormEvent) {
     event.preventDefault()
     const amount = Number(purchase.amount)
     if (!selectedClient || amount <= 0) return
 
-    const basePoints = Math.floor(amount * pointsPerPeso)
+    const basePoints = pointsForAmount(amount, data.settings)
     const pointsPromotion = bestPointsPromotion(data.promotions, selectedClient.rank)
     const points = pointsPromotion
       ? Math.floor(basePoints * pointsPromotion.value)
@@ -213,8 +392,11 @@ function OwnerApp() {
     const updatedClients = data.clients.map((client) => {
       if (client.id !== selectedClient.id) return client
       const nextPoints = client.points + points
-      return { ...client, points: nextPoints, rank: rankForPoints(nextPoints) }
+      const nextRank = rankForPoints(nextPoints, data.settings)
+      return { ...client, points: nextPoints, rank: nextRank }
     })
+    const updatedClient = updatedClients.find((client) => client.id === selectedClient.id)
+    const rankChanged = updatedClient?.rank !== selectedClient.rank
 
     persist({
       ...data,
@@ -234,6 +416,20 @@ function OwnerApp() {
         },
         ...data.purchases,
       ],
+      notifications: rankChanged
+        ? [
+            {
+              id: nextId(data.notifications),
+              clientId: selectedClient.id,
+              title: 'Cambio de rango',
+              message: `Subiste a rango ${updatedClient?.rank}.`,
+              type: 'rank',
+              date: today(),
+              read: false,
+            },
+            ...data.notifications,
+          ]
+        : data.notifications,
     })
     setPurchase({ amount: '', detail: '' })
   }
@@ -246,7 +442,11 @@ function OwnerApp() {
     const updatedClients = data.clients.map((client) => {
       if (client.id !== selectedClient.id) return client
       const nextPoints = client.points - reward.points
-      return { ...client, points: nextPoints, rank: rankForPoints(nextPoints) }
+      return {
+        ...client,
+        points: nextPoints,
+        rank: rankForPoints(nextPoints, data.settings),
+      }
     })
 
     persist({
@@ -277,7 +477,7 @@ function OwnerApp() {
           </p>
           <input
             className="field"
-            placeholder="Email"
+            placeholder="Email de usuario"
             value={login.email}
             onChange={(event) => setLogin({ ...login, email: event.target.value })}
           />
@@ -333,7 +533,7 @@ function OwnerApp() {
           </div>
           <input
             className="field"
-            placeholder="Buscar por nombre, telefono o email"
+            placeholder="Buscar por nombre, DNI, telefono o email"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -349,7 +549,7 @@ function OwnerApp() {
                 <span>
                   <strong>{client.name}</strong>
                   <small>
-                    {client.rank} - {client.phone}
+                    DNI {client.dni} - {client.rank} - {client.phone}
                   </small>
                 </span>
                 <b>{client.points} pts</b>
@@ -364,6 +564,14 @@ function OwnerApp() {
               value={newClient.name}
               onChange={(event) =>
                 setNewClient({ ...newClient, name: event.target.value })
+              }
+            />
+            <input
+              className="field"
+              placeholder="DNI"
+              value={newClient.dni}
+              onChange={(event) =>
+                setNewClient({ ...newClient, dni: event.target.value })
               }
             />
             <input
@@ -419,8 +627,9 @@ function OwnerApp() {
                   <p className="eyebrow">Cuenta seleccionada</p>
                   <h2>{selectedClient.name}</h2>
                   <span>
+                    DNI {selectedClient.dni} -{' '}
                     {selectedClient.email || selectedClient.phone} - Rango{' '}
-                    {selectedClient.rank}
+                    {selectedClient.rank} - Vence {selectedClient.pointsExpireAt}
                   </span>
                 </div>
                 <div className="points-badge">
@@ -476,18 +685,77 @@ function OwnerApp() {
                 <span>Canjes</span>
                 <strong>{data.rewards.length}</strong>
               </div>
+              <form className="reward-admin-form" onSubmit={saveReward}>
+                <input
+                  className="field"
+                  placeholder="Premio o beneficio"
+                  value={rewardForm.title}
+                  onChange={(event) =>
+                    setRewardForm({ ...rewardForm, title: event.target.value })
+                  }
+                />
+                <input
+                  className="field"
+                  type="number"
+                  min="1"
+                  placeholder="Puntos"
+                  value={rewardForm.points}
+                  onChange={(event) =>
+                    setRewardForm({ ...rewardForm, points: event.target.value })
+                  }
+                />
+                <input
+                  className="field"
+                  placeholder="Descripcion"
+                  value={rewardForm.description}
+                  onChange={(event) =>
+                    setRewardForm({
+                      ...rewardForm,
+                      description: event.target.value,
+                    })
+                  }
+                />
+                <button className="primary-button" type="submit">
+                  {rewardForm.id ? 'Guardar canje' : 'Crear canje'}
+                </button>
+              </form>
               <div className="reward-list">
                 {data.rewards.map((reward) => (
                   <article className="reward-card" key={reward.id}>
                     <div>
                       <h3>{reward.title}</h3>
-                      <p>{reward.description}</p>
+                      <p>
+                        {reward.description} -{' '}
+                        {reward.active ? 'Activo' : 'Pausado'}
+                      </p>
                     </div>
                     <button
-                      disabled={!selectedClient || selectedClient.points < reward.points}
+                      disabled={
+                        !reward.active ||
+                        !selectedClient ||
+                        selectedClient.points < reward.points
+                      }
                       onClick={() => redeem(reward.id)}
                     >
                       {reward.points} pts
+                    </button>
+                    <button
+                      className="secondary-button compact-action"
+                      onClick={() => editReward(reward.id)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="secondary-button compact-action"
+                      onClick={() => toggleReward(reward.id)}
+                    >
+                      {reward.active ? 'Pausar' : 'Activar'}
+                    </button>
+                    <button
+                      className="secondary-button compact-action"
+                      onClick={() => deleteReward(reward.id)}
+                    >
+                      Eliminar
                     </button>
                   </article>
                 ))}
@@ -524,6 +792,152 @@ function OwnerApp() {
 
           {canManageUsers && (
             <>
+              <section className="panel">
+                <div className="section-title">
+                  <span>Panel de configuracion</span>
+                  <strong>{settingsForm.bookstoreName}</strong>
+                </div>
+                <form className="settings-form" onSubmit={saveSettings}>
+                  <input
+                    className="field"
+                    placeholder="Nombre de la libreria"
+                    value={settingsForm.bookstoreName}
+                    onChange={(event) =>
+                      setSettingsForm({
+                        ...settingsForm,
+                        bookstoreName: event.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    className="field"
+                    placeholder="Direccion"
+                    value={settingsForm.address}
+                    onChange={(event) =>
+                      setSettingsForm({
+                        ...settingsForm,
+                        address: event.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    className="field"
+                    placeholder="Telefono libreria"
+                    value={settingsForm.phone}
+                    onChange={(event) =>
+                      setSettingsForm({
+                        ...settingsForm,
+                        phone: event.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    className="field"
+                    type="number"
+                    min="1"
+                    placeholder="Pesos por punto"
+                    value={settingsForm.pointsMoneyAmount}
+                    onChange={(event) =>
+                      setSettingsForm({
+                        ...settingsForm,
+                        pointsMoneyAmount: Number(event.target.value),
+                      })
+                    }
+                  />
+                  <input
+                    className="field"
+                    type="number"
+                    min="1"
+                    placeholder="Puntos otorgados"
+                    value={settingsForm.pointValue}
+                    onChange={(event) =>
+                      setSettingsForm({
+                        ...settingsForm,
+                        pointValue: Number(event.target.value),
+                      })
+                    }
+                  />
+                  <input
+                    className="field"
+                    type="number"
+                    min="1"
+                    placeholder="Vencimiento en meses"
+                    value={settingsForm.pointsExpirationMonths}
+                    onChange={(event) =>
+                      setSettingsForm({
+                        ...settingsForm,
+                        pointsExpirationMonths: Number(event.target.value),
+                      })
+                    }
+                  />
+                  {(['Bronce', 'Plata', 'Oro', 'Diamante'] as const).map(
+                    (rank) => (
+                      <div className="rank-config" key={rank}>
+                        <label>
+                          Minimo {rank}
+                          <input
+                            className="field"
+                            type="number"
+                            min="0"
+                            value={settingsForm.ranks[rank].minPoints}
+                            onChange={(event) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                ranks: {
+                                  ...settingsForm.ranks,
+                                  [rank]: {
+                                    ...settingsForm.ranks[rank],
+                                    minPoints: Number(event.target.value),
+                                  },
+                                },
+                              })
+                            }
+                          />
+                        </label>
+                        <input
+                          className="field"
+                          placeholder={`Beneficio ${rank}`}
+                          value={settingsForm.ranks[rank].benefit}
+                          onChange={(event) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              ranks: {
+                                ...settingsForm.ranks,
+                                [rank]: {
+                                  ...settingsForm.ranks[rank],
+                                  benefit: event.target.value,
+                                },
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    ),
+                  )}
+                  <button className="primary-button" type="submit">
+                    Guardar configuracion
+                  </button>
+                </form>
+              </section>
+
+              <section className="panel">
+                <div className="section-title">
+                  <span>Exportes</span>
+                  <strong>CSV / PDF</strong>
+                </div>
+                <div className="export-actions">
+                  <button className="secondary-button" onClick={exportClients}>
+                    Exportar clientes CSV
+                  </button>
+                  <button className="secondary-button" onClick={exportMovements}>
+                    Exportar movimientos CSV
+                  </button>
+                  <button className="secondary-button" onClick={() => window.print()}>
+                    Imprimir / PDF
+                  </button>
+                </div>
+              </section>
+
               <section className="panel">
                 <div className="section-title">
                   <span>Gestion de promociones</span>
