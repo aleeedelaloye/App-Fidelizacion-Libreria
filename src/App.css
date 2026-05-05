@@ -77,7 +77,9 @@
 
 .panel-stage .client-panel,
 .panel-stage .module-panel {
+  box-sizing: border-box;
   max-width: none;
+  min-width: 0;
   width: 100%;
 }
 
@@ -92,12 +94,14 @@
 .two-columns.is-active {
   animation: slide-panel-in 280ms ease both;
   display: grid;
+  max-width: none;
   width: 100%;
 }
 
 .module-workspace.is-active {
   animation: slide-panel-in 280ms ease both;
   display: block;
+  max-width: none;
   width: 100%;
 }
 
@@ -616,6 +620,25 @@ small {
 
 .panel-stage .two-columns.is-active {
   grid-template-columns: 1fr;
+}
+
+.panel-stage .reward-card,
+.panel-stage .history-row,
+.panel-stage .promotion-card,
+.panel-stage .client-row {
+  width: 100%;
+}
+
+.panel-stage .client-list {
+  max-height: none;
+}
+
+.panel-stage .purchase-form,
+.panel-stage .settings-form,
+.panel-stage .promotion-form,
+.panel-stage .reward-admin-form,
+.panel-stage .user-form {
+  width: 100%;
 }
 
 .reward-list,
