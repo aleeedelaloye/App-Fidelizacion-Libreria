@@ -19,6 +19,16 @@ import {
   today,
 } from '../shared/store'
 
+type OwnerPanel =
+  | 'clientes'
+  | 'ventas'
+  | 'canjes'
+  | 'historial'
+  | 'promociones'
+  | 'configuracion'
+  | 'exportes'
+  | 'usuarios'
+
 function OwnerApp() {
   const [data, setData] = useState<LoyaltyData>(() => loadData())
   const [session, setSession] = useState<User | null>(null)
@@ -58,6 +68,7 @@ function OwnerApp() {
   })
   const [purchase, setPurchase] = useState({ amount: '', detail: '' })
   const [loginError, setLoginError] = useState('')
+  const [activePanel, setActivePanel] = useState<OwnerPanel>('clientes')
 
   const selectedClient = data.clients.find(
     (client) => client.id === selectedClientId,
@@ -86,6 +97,23 @@ function OwnerApp() {
     ? Math.floor(previewBasePoints * activePointsPromotion.value)
     : previewBasePoints
   const canManageUsers = session?.role === 'owner'
+  const ownerPanels: Array<{ id: OwnerPanel; label: string }> = [
+    { id: 'clientes', label: 'Clientes' },
+    { id: 'ventas', label: 'Ventas' },
+    { id: 'canjes', label: 'Canjes' },
+    { id: 'historial', label: 'Historial' },
+    ...(canManageUsers
+      ? [
+          { id: 'promociones' as OwnerPanel, label: 'Promociones' },
+          { id: 'configuracion' as OwnerPanel, label: 'Configuracion' },
+          { id: 'exportes' as OwnerPanel, label: 'Exportes' },
+          { id: 'usuarios' as OwnerPanel, label: 'Usuarios' },
+        ]
+      : []),
+  ]
+  const activePanelIndex = ownerPanels.findIndex(
+    (panel) => panel.id === activePanel,
+  )
 
   const usersByRole = useMemo(
     () =>
@@ -526,17 +554,24 @@ function OwnerApp() {
       </header>
 
       <nav className="top-menu" aria-label="Navegacion principal">
-        <a href="#clientes">Clientes</a>
-        <a href="#ventas">Ventas</a>
-        <a href="#canjes">Canjes</a>
-        {canManageUsers && <a href="#promociones">Promociones</a>}
-        {canManageUsers && <a href="#configuracion">Configuracion</a>}
-        {canManageUsers && <a href="#exportes">Exportes</a>}
-        {canManageUsers && <a href="#usuarios">Usuarios</a>}
+        {ownerPanels.map((panel) => (
+          <button
+            className={activePanel === panel.id ? 'active' : ''}
+            key={panel.id}
+            onClick={() => setActivePanel(panel.id)}
+          >
+            {panel.label}
+          </button>
+        ))}
       </nav>
 
-      <section className="seller-layout">
-        <aside className="panel client-panel" id="clientes">
+      <section className="seller-layout panel-stage" data-panel-index={activePanelIndex}>
+        <aside
+          className={`panel client-panel module-panel ${
+            activePanel === 'clientes' ? 'is-active' : 'is-hidden'
+          }`}
+          id="clientes"
+        >
           <div className="section-title">
             <span>Clientes</span>
             <strong>{data.clients.length}</strong>
@@ -606,8 +641,16 @@ function OwnerApp() {
           </form>
         </aside>
 
-          <section className="workspace">
-            <div className="stats-grid">
+          <section
+            className={`workspace module-workspace ${
+              activePanel === 'clientes' ? 'is-hidden' : 'is-active'
+            }`}
+          >
+            <div
+              className={`stats-grid ${
+                activePanel === 'ventas' ? 'is-active' : 'is-hidden'
+              }`}
+            >
             <article className="metric">
               <span>Ventas</span>
               <strong>{currency(totalSales)}</strong>
@@ -631,7 +674,12 @@ function OwnerApp() {
           </div>
 
           {selectedClient && (
-            <div className="panel customer-detail" id="ventas">
+            <div
+              className={`panel customer-detail module-panel ${
+                activePanel === 'ventas' ? 'is-active' : 'is-hidden'
+              }`}
+              id="ventas"
+            >
               <div className="customer-heading">
                 <div>
                   <p className="eyebrow">Cuenta seleccionada</p>
@@ -689,8 +737,19 @@ function OwnerApp() {
             </div>
           )}
 
-          <div className="two-columns">
-            <section className="panel" id="canjes">
+          <div
+            className={`two-columns ${
+              activePanel === 'canjes' || activePanel === 'historial'
+                ? 'is-active'
+                : 'is-hidden'
+            }`}
+          >
+            <section
+              className={`panel module-panel ${
+                activePanel === 'canjes' ? 'is-active' : 'is-hidden'
+              }`}
+              id="canjes"
+            >
               <div className="section-title">
                 <span>Canjes</span>
                 <strong>{data.rewards.length}</strong>
@@ -772,7 +831,12 @@ function OwnerApp() {
               </div>
             </section>
 
-            <section className="panel" id="historial">
+            <section
+              className={`panel module-panel ${
+                activePanel === 'historial' ? 'is-active' : 'is-hidden'
+              }`}
+              id="historial"
+            >
               <div className="section-title">
                 <span>Historial</span>
               </div>
@@ -802,7 +866,12 @@ function OwnerApp() {
 
           {canManageUsers && (
             <>
-              <section className="panel" id="configuracion">
+              <section
+                className={`panel module-panel ${
+                  activePanel === 'configuracion' ? 'is-active' : 'is-hidden'
+                }`}
+                id="configuracion"
+              >
                 <div className="section-title">
                   <span>Panel de configuracion</span>
                   <strong>{settingsForm.bookstoreName}</strong>
@@ -930,7 +999,12 @@ function OwnerApp() {
                 </form>
               </section>
 
-              <section className="panel" id="exportes">
+              <section
+                className={`panel module-panel ${
+                  activePanel === 'exportes' ? 'is-active' : 'is-hidden'
+                }`}
+                id="exportes"
+              >
                 <div className="section-title">
                   <span>Exportes</span>
                   <strong>CSV / PDF</strong>
@@ -948,7 +1022,12 @@ function OwnerApp() {
                 </div>
               </section>
 
-              <section className="panel" id="promociones">
+              <section
+                className={`panel module-panel ${
+                  activePanel === 'promociones' ? 'is-active' : 'is-hidden'
+                }`}
+                id="promociones"
+              >
                 <div className="section-title">
                   <span>Gestion de promociones</span>
                   <strong>{data.promotions.length}</strong>
@@ -1071,7 +1150,12 @@ function OwnerApp() {
                 </div>
               </section>
 
-              <section className="panel" id="usuarios">
+              <section
+                className={`panel module-panel ${
+                  activePanel === 'usuarios' ? 'is-active' : 'is-hidden'
+                }`}
+                id="usuarios"
+              >
                 <div className="section-title">
                   <span>Usuarios y permisos</span>
                   <strong>
