@@ -388,6 +388,31 @@ small {
   margin-right: 8px;
 }
 
+.native-app .app-shell {
+  background: #f5f7f4;
+  padding: 0;
+}
+
+.native-app .mobile-stage {
+  display: block;
+  min-height: 100vh;
+}
+
+.native-app .phone-frame {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  max-height: none;
+  max-width: none;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.native-app .client-hero,
+.native-app .client-auth {
+  padding-top: max(24px, env(safe-area-inset-top));
+}
+
 .workspace {
   display: grid;
   gap: 18px;

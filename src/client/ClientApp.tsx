@@ -74,6 +74,15 @@ function ClientApp() {
     void refreshSharedData()
   }, [])
 
+  useEffect(() => {
+    const isNativeApp = 'Capacitor' in window
+    document.body.classList.toggle('native-app', isNativeApp)
+
+    return () => {
+      document.body.classList.remove('native-app')
+    }
+  }, [])
+
   function pointsExpireAt() {
     const date = new Date()
     date.setMonth(date.getMonth() + data.settings.pointsExpirationMonths)
