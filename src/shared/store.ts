@@ -97,7 +97,7 @@ const apiBaseUrl = 'http://127.0.0.1:8787'
 export const pointsPerPeso = 0.1
 
 export const defaultSettings: LoyaltySettings = {
-  bookstoreName: 'Libreria Punto Lector',
+  bookstoreName: 'Libreria Veintidos Veintitres',
   address: 'Av. Siempre Viva 123',
   phone: '341 555 1000',
   pointsMoneyAmount: 10,

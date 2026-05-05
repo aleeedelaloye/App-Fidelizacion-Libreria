@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.puntolector.fidelizacion"
+    namespace "com.veintidosveintitres.fidelizacion"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.puntolector.fidelizacion"
+        applicationId "com.veintidosveintitres.fidelizacion"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

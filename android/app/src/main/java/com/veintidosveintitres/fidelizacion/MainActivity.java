@@ -1,4 +1,4 @@
-package com.puntolector.fidelizacion;
+package com.veintidosveintitres.fidelizacion;
 
 import com.getcapacitor.BridgeActivity;
 

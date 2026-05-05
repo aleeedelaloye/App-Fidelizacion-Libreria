@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'com.puntolector.fidelizacion',
-  appName: 'Punto Lector',
+  appId: 'com.veintidosveintitres.fidelizacion',
+  appName: 'Veintidos Veintitres',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

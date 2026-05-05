@@ -519,7 +519,7 @@ function OwnerApp() {
       <main className="app-shell auth-layout">
         <form className="panel auth-card" onSubmit={handleLogin}>
           <p className="eyebrow">Servidor Windows</p>
-          <h1>Libreria Punto Lector</h1>
+          <h1>Libreria Veintidos Veintitres</h1>
           <p className="muted">
             Acceso exclusivo para dueno y vendedores. Demo: admin@libreria.com /
             admin123.
