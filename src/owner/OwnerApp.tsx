@@ -525,8 +525,18 @@ function OwnerApp() {
         </div>
       </header>
 
+      <nav className="top-menu" aria-label="Navegacion principal">
+        <a href="#clientes">Clientes</a>
+        <a href="#ventas">Ventas</a>
+        <a href="#canjes">Canjes</a>
+        {canManageUsers && <a href="#promociones">Promociones</a>}
+        {canManageUsers && <a href="#configuracion">Configuracion</a>}
+        {canManageUsers && <a href="#exportes">Exportes</a>}
+        {canManageUsers && <a href="#usuarios">Usuarios</a>}
+      </nav>
+
       <section className="seller-layout">
-        <aside className="panel client-panel">
+        <aside className="panel client-panel" id="clientes">
           <div className="section-title">
             <span>Clientes</span>
             <strong>{data.clients.length}</strong>
@@ -596,8 +606,8 @@ function OwnerApp() {
           </form>
         </aside>
 
-        <section className="workspace">
-          <div className="stats-grid">
+          <section className="workspace">
+            <div className="stats-grid">
             <article className="metric">
               <span>Ventas</span>
               <strong>{currency(totalSales)}</strong>
@@ -621,7 +631,7 @@ function OwnerApp() {
           </div>
 
           {selectedClient && (
-            <div className="panel customer-detail">
+            <div className="panel customer-detail" id="ventas">
               <div className="customer-heading">
                 <div>
                   <p className="eyebrow">Cuenta seleccionada</p>
@@ -680,7 +690,7 @@ function OwnerApp() {
           )}
 
           <div className="two-columns">
-            <section className="panel">
+            <section className="panel" id="canjes">
               <div className="section-title">
                 <span>Canjes</span>
                 <strong>{data.rewards.length}</strong>
@@ -762,7 +772,7 @@ function OwnerApp() {
               </div>
             </section>
 
-            <section className="panel">
+            <section className="panel" id="historial">
               <div className="section-title">
                 <span>Historial</span>
               </div>
@@ -792,7 +802,7 @@ function OwnerApp() {
 
           {canManageUsers && (
             <>
-              <section className="panel">
+              <section className="panel" id="configuracion">
                 <div className="section-title">
                   <span>Panel de configuracion</span>
                   <strong>{settingsForm.bookstoreName}</strong>
@@ -920,7 +930,7 @@ function OwnerApp() {
                 </form>
               </section>
 
-              <section className="panel">
+              <section className="panel" id="exportes">
                 <div className="section-title">
                   <span>Exportes</span>
                   <strong>CSV / PDF</strong>
@@ -938,7 +948,7 @@ function OwnerApp() {
                 </div>
               </section>
 
-              <section className="panel">
+              <section className="panel" id="promociones">
                 <div className="section-title">
                   <span>Gestion de promociones</span>
                   <strong>{data.promotions.length}</strong>
@@ -1061,7 +1071,7 @@ function OwnerApp() {
                 </div>
               </section>
 
-              <section className="panel">
+              <section className="panel" id="usuarios">
                 <div className="section-title">
                   <span>Usuarios y permisos</span>
                   <strong>
