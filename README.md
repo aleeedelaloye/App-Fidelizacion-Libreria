@@ -67,6 +67,22 @@ Salida debug:
 Para compilar se necesita Android Studio/JDK y Android SDK. En esta maquina se
 usa el Java incluido en Android Studio.
 
+## Publicar como web
+
+El repositorio incluye GitHub Actions para publicar la demo en GitHub Pages.
+Cuando GitHub Pages este habilitado con origen `GitHub Actions`, la web queda en:
+
+`https://aleeedelaloye.github.io/App-Fidelizacion-Libreria/`
+
+Entradas:
+
+- Inicio: `/`
+- Panel Windows web: `/owner.html`
+- App cliente web: `/client.html`
+
+En GitHub Pages la API local no esta disponible, por eso la demo usa respaldo
+en `localStorage` del navegador.
+
 ## Proximo paso para produccion
 
 Esta version simula la base en el navegador. Para llevarlo a produccion:
